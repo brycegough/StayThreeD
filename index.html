@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - animation - keyframes</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<script type="text/javascript" src="jquery.min.js"></script>
+		<script type="text/javascript" src="stay.js"></script>
+		<link type="text/css" rel="stylesheet" href="main.css">
+		<link type="text/css" rel="stylesheet" href="stay.css">
+		<style>
+			body {
+				background-color: #bfe3dd;
+				color: #000;
+			}
+
+			a {
+				color: #2983ff;
+			}
+		</style>
+	</head>
+
+	<body>
+
+		<section id="canvas">
+			<div id="container"></div>
+		</section>
+
+		<div id="info" style="display:none;">
+			<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> webgl - animation - keyframes<br/>
+			Model: <a href="https://www.artstation.com/artwork/1AGwX" target="_blank" rel="noopener">Littlest Tokyo</a> by
+			<a href="https://www.artstation.com/glenatron" target="_blank" rel="noopener">Glen Fox</a>, CC Attribution.
+		</div>
+
+		<script type="module">
+
+			import * as THREE from './three.module.js';
+
+			import Stats from './jsm/libs/stats.module.js';
+
+			import { OrbitControls } from './jsm/controls/OrbitControls.js';
+			import { RoomEnvironment } from './jsm/environments/RoomEnvironment.js';
+
+			import { GLTFLoader } from './jsm/loaders/GLTFLoader.js';
+			import { DRACOLoader } from './jsm/loaders/DRACOLoader.js';
+
+			const enableControls = false;
+
+			const clock = new THREE.Clock();
+			const container = document.getElementById( 'container' );
+
+			const stats = new Stats();
+			document.body.appendChild( stats.dom );
+
+			const renderer = new THREE.WebGLRenderer( { antialias: true } );
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.outputEncoding = THREE.sRGBEncoding;
+			container.appendChild( renderer.domElement );
+
+			const pmremGenerator = new THREE.PMREMGenerator( renderer );
+
+			const scene = new THREE.Scene();
+			scene.background = new THREE.Color( 0x8e42eb );
+			scene.environment = pmremGenerator.fromScene( new RoomEnvironment(), 0.04 ).texture;
+
+			const camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 100 );
+			camera.rotation.set(3.1, 0.56, -3.155) //_x: 3.1002892183200035, _y: 0.564065775854911, _z: -3.119501769170653
+			camera.position.set(3.351917486911884, -0.336681113422987, -4.873243582987745) //x: 4.351917486911884, y: -0.163318886577013, z: -4.873243582987745
+			window.camera = camera;
+
+			if (enableControls) {
+				const controls = new OrbitControls( camera, renderer.domElement );
+				controls.target.set( 0, 0.5, 0 );
+				controls.update();
+				controls.enablePan = false;
+				controls.enableDamping = true;
+			}
+
+			const dracoLoader = new DRACOLoader();
+			dracoLoader.setDecoderPath( 'libs/draco/gltf/' );
+
+			// TODO Show loading
+
+			const loader = new GLTFLoader();
+			loader.setDRACOLoader( dracoLoader );
+			loader.load( 'models/LittlestTokyo.glb', function ( gltf ) {
+
+				const model = gltf.scene;
+				model.position.set( 1, 1, 0 );
+				model.scale.set( 0.01, 0.01, 0.01 );
+				scene.add( model );
+
+				window.mixer = new THREE.AnimationMixer( model );
+				let ani = window.animation = window.mixer.clipAction( gltf.animations[ 0 ] );
+				ani.paused = true;
+				ani.play()
+				ani.time = 4.9;
+
+				animate();
+
+			}, undefined, function ( e ) {
+				console.error( e );
+			} );
+
+
+			window.onresize = function () {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			};
+
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+
+				const delta = clock.getDelta();
+
+				window.mixer.update( delta );
+
+				if (enableControls) {
+					controls.update();
+				}
+
+				stats.update();
+
+				renderer.render( scene, camera );
+
+			}
+
+			const distance = 50000,
+			bp = {
+				zoomIn1: 0.00654,
+				zoomOut2: 0.00854,
+				rotateIn1: 0.00118,
+				rotateOut1: 0.006,
+				animateStart: 0,
+				animateMid: 0.04,
+				animateEnd: 0.08,
+				slideRight1: 0.00958,
+				slideRightEnd1: 0.03
+			}
+
+			window._$ = new Stay({
+				props: {
+					x: (v) =>	camera.position.setX(v),
+					y: (v) => camera.position.setY(v),
+					z: (v) => camera.position.setZ(v),
+					ry: (v) => camera.rotation.y = v,
+					time: (v) => animation.time = v
+				},
+				sections: [
+					{
+						name: 'start',
+						debug: true,
+						selector: '#canvas',
+						// TODO If element selector is empty, use scroller as a waypoint
+						distance,
+						/*animate: [
+							{
+								name: 'Movement',
+								start: 0,
+								peak: 0.04, // used for splitInOut function, maybe others
+								stop: 0.08,
+								tween: {
+									time: [ 4.9, 0 ]
+								}
+							}
+							{
+								name: 'Rotate1',
+								start: 0.00118,
+								stop: 0.006,
+								tween: {
+									ry: [ 0.56, 0.0633 ]
+								}
+							},
+							{
+								name: 'ZoomIn1',
+								start: 0,
+								stop: 0.00654,
+								tween: {
+									x: {
+										from: 3.351917486911884,
+										to: 1.199,
+										ease: Stay.ease.out
+									},
+									z: [ -4.873243582987745, -3.34, Stay.ease.in]
+								}
+							},
+							{
+								name: 'ZoomOut1',
+								start: '<<', // start at end of previous, <<< start at beginning of previous
+								stop: 0.00854,
+								tween: {
+									z: {
+										from: -3.34,
+										to: -5,
+										ease: '>', // ease in?
+										// .set should override main props callback
+										set: (v) => camera.position.setZ(v),
+										//and: [ 'x', 'y' ] // other props to set
+									}
+								}
+							},
+							{
+								name: 'SlideRight1',
+								start: '<<', //0.00958,
+								stop: 0.03,
+								tween: {
+									x: [ 1.199, -2 ]
+								}
+							}
+						],*/
+						scroll: (a, s, sy, y) => {
+							// TODO - STAYJS section breakpoints with queuing capabilities & detailed debugger
+							if (a < bp.zoomIn1) {
+								camera.position.setX(Stay.tween(3.351917486911884, 1.199, Stay.split(a, 0, bp.zoomIn1)));
+								camera.position.setZ(Stay.tween(-4.873243582987745, -3.34, Stay.split(a, 0, bp.zoomIn1)));
+							} else {
+								camera.position.setZ(Stay.tween(-3.34, -5, Stay.split(a, bp.zoomIn1, bp.zoomOut2)));
+							}
+
+							if (a >= bp.slideRight1) {
+								camera.position.setX(Stay.tween(1.199, -2, Stay.split(a, bp.slideRight1, bp.slideRightEnd1)));
+							}
+
+							camera.rotation.y = Stay.tween(0.56, 0.0633, Stay.split(a, bp.rotateIn1, bp.rotateOut1));
+
+							animation.time = Stay.tween(4.9, 0, Stay.splitInOut(a, bp.animateStart, bp.animateMid, bp.animateEnd));
+
+							// TODO - implement the following syntax, and define a standardised decimal
+							// for start/stop values based on section distance to maintain animation speed & positions
+							//return ;
+						}
+					}
+				]
+			});
+
+
+		</script>
+
+	</body>
+
+</html>
