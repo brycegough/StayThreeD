@@ -169,11 +169,17 @@
 								tween: {
 									time: [ 4.9, 0 ]
 								}
-							}
+							},
 							{
 								name: 'Rotate1',
 								start: 0.00118,
 								stop: 0.006,
+								//or
+								//start: '100px', // section pixels
+								//stop: '+50px' // plus 50 from the start value
+								//or
+								//start: '<<',
+								//stop: '+100px', // +N% = section percent, +N%% = page percent, Nppx = page pixels
 								tween: {
 									ry: [ 0.56, 0.0633 ]
 								}
@@ -182,6 +188,8 @@
 								name: 'ZoomIn1',
 								start: 0,
 								stop: 0.00654,
+								//or
+								//stop: '>>', // stop and end of next
 								tween: {
 									x: {
 										from: 3.351917486911884,
